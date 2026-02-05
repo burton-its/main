@@ -1,3 +1,5 @@
+"""Flask app for user authentication (login, logout, register)."""
+
 # imports
 from flask import Flask, request, redirect, render_template, url_for, session
 from flask_mysqldb import MySQL
@@ -8,8 +10,9 @@ from config import Config
 
 
 """
-template from geeksforgeeks
-bcrypt used with help from ChatGPT
+Notes:
+- Authentication flow based on a GeeksForGeeks tutorial.
+- Password hashing uses bcrypt.
 """
 
 app = Flask(__name__)
@@ -19,6 +22,7 @@ mysql = MySQL(app)
 @app.route("/")
 @app.route("/login", methods=["GET", "POST"])
 def login():
+    """Render login form and authenticate users on POST."""
     msg = ""
     #  check if login was submitted
     if request.method == "POST" and "email" in request.form and "password" in request.form:
@@ -44,11 +48,13 @@ def login():
 # logout route
 @app.route("/logout")
 def logout():
+    """Clear session and redirect to login."""
     session.clear()
     return redirect(url_for("login"))
 # register route
 @app.route("/register", methods=["GET", "POST"])
 def register():
+    """Render registration form and create a new user on POST."""
     msg = ""
     if request.method == "POST":
         email = request.form.get("email", "").strip().lower()
