@@ -12,7 +12,7 @@ from config import Config
 """
 Notes:
 - Authentication flow based on a GeeksForGeeks tutorial.
-- Password hashing uses bcrypt.
+- Password hashing uses bcrypt - From google
 """
 
 app = Flask(__name__)

@@ -20,8 +20,8 @@ The current `config.py` reads these environment variable names:
 ```
 MYSQL_HOST=localhost
 MYSQL_DB=musicdb
-Finn3=your_secret_key
-Corey=app_user
+MYSQL_SECRET_KEY=your_secret_key
+APP_USER=app_user
 ```
 
 Note: `MYSQL_PASSWORD` is not read from a named environment variable in the current code. If you intend to supply a password, update `config.py` to use a standard key like `MYSQL_PASSWORD`.
