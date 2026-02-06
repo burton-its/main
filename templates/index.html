@@ -9,11 +9,19 @@
 <body>
 
     <div class="header">
-        <h1 class="word">Welcome, {{ session.username }}!</h1>
+        <h1 class="word">Welcome, {{ session.email }}!</h1>
     </div>
 
     <div class="border">
         <p class="word">You are now logged in.</p>
+
+        <!-- NEW: preferences link -->
+        <a class="btn" href="{{ url_for('preferences') }}">
+            Set Music Preferences
+        </a>
+
+        <br><br>
+
         <a class="btn" href="{{ url_for('logout') }}">Logout</a>
     </div>
 

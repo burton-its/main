@@ -1,5 +1,6 @@
 """Flask app for user authentication (login, logout, register)."""
-
+from flask import jsonify
+from recommender import load_and_build_artifacts, recommend
 # imports
 from flask import Flask, request, redirect, render_template, url_for, session
 from flask_mysqldb import MySQL
@@ -18,6 +19,7 @@ Notes:
 app = Flask(__name__)
 app.config.from_object(Config)  
 mysql = MySQL(app)
+ARTIFACTS = None
 
 @app.route("/")
 @app.route("/login", methods=["GET", "POST"])
@@ -90,6 +92,54 @@ def register():
         return redirect(url_for("login"))
 
     return render_template("register.html", msg=msg)
+
+
+@app.route("/preferences")
+def preferences():
+    """Render music preferences page for logged-in users."""
+    if not session.get("loggedin"):
+        return redirect(url_for("login"))
+    return render_template("preferences.html")
+
+
+@app.route("/recommendations", methods=["POST"])
+def recommendations():
+    """Return music recommendations for the provided preference payload."""
+    if not session.get("loggedin"):
+        return jsonify({"error": "Authentication required"}), 401
+
+    data = request.get_json(silent=True) or {}
+    prefs = data.get("preferences") or {}
+    genres = data.get("genres") or None
+    tempo_bpm = data.get("tempo_bpm")
+    k = 1
+
+    try:
+        global ARTIFACTS
+        if ARTIFACTS is None:
+            ARTIFACTS = load_and_build_artifacts("music_dataset.csv")
+        recs = recommend(
+            artifacts=ARTIFACTS,
+            preferences=prefs,
+            genres=genres,
+            tempo_bpm=tempo_bpm,
+            k=1,
+        )
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+    minimal = [
+        {
+            "artist": row.get("artists"),
+            "title": row.get("track_name"),
+        }
+        for _, row in recs.iterrows()
+    ]
+
+    if not minimal:
+        return jsonify({"error": "No recommendations found"}), 404
+
+    return jsonify(minimal[0])
+    # return jsonify(recs.to_dict(orient="records"))
 
 if __name__ == "__main__":
     app.run(debug=True)

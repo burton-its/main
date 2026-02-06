@@ -1,7 +1,156 @@
-<form method="POST">
-  <input name="genres" placeholder="genres (comma separated)" />
-  <input name="artists" placeholder="artists (comma separated)" />
-  <button type="submit">Save preferences</button>
-</form>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Music Preferences</title>
 
-<a href="/logout">Logout</a>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+      padding: 24px;
+      max-width: 700px;
+      margin: 0 auto;
+    }
+    .card {
+      border: 1px solid #ddd;
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+    .muted {
+      color: #666;
+      font-size: 0.95rem;
+    }
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    label.chip {
+      border: 1px solid #ccc;
+      border-radius: 999px;
+      padding: 6px 10px;
+      cursor: pointer;
+      user-select: none;
+    }
+    button {
+      padding: 10px 14px;
+      border: 0;
+      border-radius: 10px;
+      cursor: pointer;
+      background: #111;
+      color: #fff;
+    }
+    pre {
+      background: #f6f6f6;
+      border-radius: 12px;
+      padding: 12px;
+      overflow: auto;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>Pick your choices</h1>
+  <p class="muted">Checkbox-only preferences. Backend can map these to features.</p>
+
+  <div class="card">
+    <h2>Audio traits</h2>
+    <div class="chips" id="audioTraits">
+      <label class="chip"><input type="checkbox" value="high_energy">High energy</label>
+      <label class="chip"><input type="checkbox" value="danceable">Danceable</label>
+      <label class="chip"><input type="checkbox" value="happy">Happy / upbeat</label>
+      <label class="chip"><input type="checkbox" value="acoustic">Acoustic</label>
+      <label class="chip"><input type="checkbox" value="instrumental">Instrumental</label>
+      <label class="chip"><input type="checkbox" value="lyrical">Lyrical / vocal</label>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Genres</h2>
+    <div class="chips" id="genres">
+      <label class="chip"><input type="checkbox" value="pop">pop</label>
+      <label class="chip"><input type="checkbox" value="rock">rock</label>
+      <label class="chip"><input type="checkbox" value="hip-hop">hip-hop</label>
+      <label class="chip"><input type="checkbox" value="dance">dance</label>
+      <label class="chip"><input type="checkbox" value="country">country</label>
+      <label class="chip"><input type="checkbox" value="metal">metal</label>
+      <label class="chip"><input type="checkbox" value="jazz">jazz</label>
+      <label class="chip"><input type="checkbox" value="classical">classical</label>
+    </div>
+  </div>
+
+  <div class="card">
+    <button onclick="submitPrefs()">Get Recommendations</button>
+
+    <h3>Request payload</h3>
+    <pre id="payloadPreview">{}</pre>
+
+    <h3>Response</h3>
+    <pre id="responseBox">(nothing yet)</pre>
+  </div>
+
+  <script>
+    function getCheckedValues(containerId) {
+      return Array.from(
+        document.querySelectorAll(`#${containerId} input[type="checkbox"]:checked`)
+      ).map(cb => cb.value);
+    }
+
+    function buildPayload() {
+      const traits = getCheckedValues("audioTraits");
+      const preferences = {
+        energy: 0.5,
+        danceability: 0.5,
+        valence: 0.5,
+        acousticness: 0.5,
+        instrumentalness: 0.5,
+        speechiness: 0.5,
+        liveness: 0.5
+      };
+
+      if (traits.includes("high_energy")) preferences.energy = 0.85;
+      if (traits.includes("danceable")) preferences.danceability = 0.85;
+      if (traits.includes("happy")) preferences.valence = 0.8;
+      if (traits.includes("acoustic")) preferences.acousticness = 0.85;
+      if (traits.includes("instrumental")) preferences.instrumentalness = 0.8;
+      if (traits.includes("lyrical")) preferences.speechiness = 0.6;
+
+      return {
+        preferences,
+        genres: getCheckedValues("genres"),
+        k: 1
+      };
+    }
+
+    function previewPayload() {
+      document.getElementById("payloadPreview").textContent =
+        JSON.stringify(buildPayload(), null, 2);
+    }
+
+    async function submitPrefs() {
+      const payload = buildPayload();
+      previewPayload();
+
+      const responseBox = document.getElementById("responseBox");
+      responseBox.textContent = "Loading...";
+
+      try {
+        const res = await fetch("/recommendations", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+
+        responseBox.textContent = await res.text();
+      } catch (err) {
+        responseBox.textContent = "Request failed: " + err;
+      }
+    }
+
+    document.addEventListener("change", previewPayload);
+    previewPayload();
+  </script>
+</body>
+</html>
