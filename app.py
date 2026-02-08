@@ -1,43 +1,37 @@
-"""Flask app for user authentication (login, logout, register)."""
-from flask import jsonify
-from recommender import load_and_build_artifacts, recommend
-# imports
-from flask import Flask, request, redirect, render_template, url_for, session
+"""flask for user authentication (login, logout, register)."""
+
+from flask import Flask, request, redirect, render_template, url_for, session, jsonify
 from flask_mysqldb import MySQL
 import MySQLdb.cursors
 import bcrypt
 import re
 from config import Config
-
-
-"""
-Notes:
-- Authentication flow based on a GeeksForGeeks tutorial.
-- Password hashing uses bcrypt - From google
-"""
+from recommender import load_artifacts, recommend
 
 app = Flask(__name__)
-app.config.from_object(Config)  
+app.config.from_object(Config)
 mysql = MySQL(app)
+
 ARTIFACTS = None
 
+# login route
 @app.route("/")
 @app.route("/login", methods=["GET", "POST"])
 def login():
     """Render login form and authenticate users on POST."""
     msg = ""
-    #  check if login was submitted
     if request.method == "POST" and "email" in request.form and "password" in request.form:
-        # normalize and extract
         email = request.form["email"].strip().lower()
         password = request.form["password"].encode("utf-8")
-    # query db for user
+
         cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
-        cursor.execute("SELECT id, email, password_hash FROM users WHERE email = %s",
-        (email,))
+        cursor.execute(
+            "SELECT id, email, password_hash FROM users WHERE email = %s",
+            (email,),
+        )
         account = cursor.fetchone()
         cursor.close()
-    # verify PW using bcrpyt
+
         if account and bcrypt.checkpw(password, account["password_hash"].encode("utf-8")):
             session["loggedin"] = True
             session["id"] = account["id"]
@@ -47,12 +41,14 @@ def login():
             msg = "Incorrect email/password!"
 
     return render_template("login.html", msg=msg)
-# logout route
+
+# logout
 @app.route("/logout")
 def logout():
     """Clear session and redirect to login."""
     session.clear()
     return redirect(url_for("login"))
+
 # register route
 @app.route("/register", methods=["GET", "POST"])
 def register():
@@ -61,13 +57,13 @@ def register():
     if request.method == "POST":
         email = request.form.get("email", "").strip().lower()
         password_raw = request.form.get("password", "")
-        # validation for email
+        # verification/auth
         if not email or not password_raw:
             return render_template("register.html", msg="Please fill out the form!")
 
         if not re.match(r"[^@]+@[^@]+\.[^@]+", email):
             return render_template("register.html", msg="Invalid email address!")
-        # execute mysql
+
         cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
         cursor.execute("SELECT id FROM users WHERE email = %s", (email,))
         existing = cursor.fetchone()
@@ -75,14 +71,18 @@ def register():
         if existing:
             cursor.close()
             return render_template("register.html", msg="Account already exists!")
-        password_hash = bcrypt.hashpw(password_raw.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
-        
+
+        password_hash = bcrypt.hashpw(
+            password_raw.encode("utf-8"),
+            bcrypt.gensalt(),
+        ).decode("utf-8")
+
         try:
-            # try for insert into mysql
-            cursor.execute("INSERT INTO users (email, password_hash) VALUES (%s, %s)",
-            (email, password_hash),)
+            cursor.execute(
+                "INSERT INTO users (email, password_hash) VALUES (%s, %s)",
+                (email, password_hash),
+            )
             mysql.connection.commit()
-            # error
         except Exception as e:
             mysql.connection.rollback()
             cursor.close()
@@ -90,58 +90,54 @@ def register():
         finally:
             cursor.close()
 
-        msg = "you have successfully registered, log in now."
         return redirect(url_for("login"))
 
     return render_template("register.html", msg=msg)
 
-
+# preferences route
 @app.route("/preferences")
 def preferences():
-    # render music pref
     if not session.get("loggedin"):
         return redirect(url_for("login"))
     return render_template("preferences.html")
 
-
+# recommendations route
 @app.route("/recommendations", methods=["POST"])
 def recommendations():
-    # return music preferences
     if not session.get("loggedin"):
         return jsonify({"error": "auth required"}), 401
 
     data = request.get_json(silent=True) or {}
-    prefs = data.get("preferences") or {}
+
+    # Bare-bones expects genres (optional) and k (optional)
     genres = data.get("genres") or None
-    tempo_bpm = data.get("tempo_bpm")
-    k = 1
+    k = int(data.get("k", 1))  # allow client to pass k, default 1
 
     try:
         global ARTIFACTS
         if ARTIFACTS is None:
-            ARTIFACTS = load_and_build_artifacts("music_dataset.csv")
+
+            ARTIFACTS = load_artifacts("music_dataset.csv")
+
+        # recommend
         recs = recommend(
             artifacts=ARTIFACTS,
-            preferences=prefs,
             genres=genres,
-            tempo_bpm=tempo_bpm,
-            k=1,
+            k=k,
         )
     except Exception as e:
         return jsonify({"error": str(e)}), 400
-    minimal = [
-        {
-            "artist": row.get("artists"),
-            "title": row.get("track_name"),
-        }
-        for _, row in recs.iterrows()
-    ]
 
-    if not minimal:
+    if recs.empty:
         return jsonify({"error": "No recommendations found"}), 404
 
-    return jsonify(minimal[0])
-    # return jsonify(recs.to_dict(orient="records"))
+    #return one
+    row0 = recs.iloc[0]
+    return jsonify({
+        "artist": row0.get("artists"),
+        "title": row0.get("track_name"),
+    })
+
 
 if __name__ == "__main__":
     app.run(debug=True)
