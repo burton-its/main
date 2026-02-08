@@ -27,8 +27,8 @@ AUDIO_FEATURES = [
     "instrumentalness",
     "speechiness",
     "liveness",
-    "tempo",
-]
+    "tempo",]
+
 # return these
 RETURN_COLUMNS = ["track_name", "artists", "track_genre"] 
 
@@ -50,7 +50,7 @@ def load_artifacts(csv_path: str) -> Artifacts:
     for col in AUDIO_FEATURES:
         df[col] = pd.to_numeric(df[col], errors="coerce")
     df = df.dropna(subset=AUDIO_FEATURES).reset_index(drop=True)
-
+    # scale everything to 0-1 so we can have everything 
     scaler = MinMaxScaler()
     X = scaler.fit_transform(df[AUDIO_FEATURES].values)
 
@@ -58,29 +58,29 @@ def load_artifacts(csv_path: str) -> Artifacts:
 
 # recommend function
 def recommend(
-    artifacts: Artifacts,
-    genres: Optional[List[str]] = None,
-    k: int = 1,
-) -> pd.DataFrame:
+    artifacts: Artifacts,genres: Optional[List[str]] = None,k: int = 1,) -> pd.DataFrame:
+
+    
     df, X = artifacts.df, artifacts.X
 
     # genre filter
     if genres:
         genres_set = {g.strip().lower() for g in genres}
         mask = df["track_genre"].astype(str).str.lower().isin(genres_set)
+        # set the value with where
         idx = np.where(mask.values)[0]
         if len(idx) == 0:
             idx = np.arange(len(df))
     else:
         idx = np.arange(len(df))
-
-    Xc = X[idx, :]
+    # get the actual array
+    array1 = X[idx, :]
 
     # 0.5 defualt
     user_raw = np.full((1, len(AUDIO_FEATURES)), 0.5, dtype=float)
     user_vec = artifacts.scaler.transform(user_raw)
     # get actual cosine similarity
-    sims = cosine_similarity(Xc, user_vec).reshape(-1)
+    sims = cosine_similarity(array1, user_vec).reshape(-1)
     order = np.argsort(-sims)
 
     results = df.iloc[idx[order]].copy()

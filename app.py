@@ -65,6 +65,7 @@ def register():
             return render_template("register.html", msg="Invalid email address!")
 
         cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
+        # get id
         cursor.execute("SELECT id FROM users WHERE email = %s", (email,))
         existing = cursor.fetchone()
 
@@ -78,6 +79,7 @@ def register():
         ).decode("utf-8")
 
         try:
+            # insert user into mysql
             cursor.execute(
                 "INSERT INTO users (email, password_hash) VALUES (%s, %s)",
                 (email, password_hash),
@@ -109,9 +111,9 @@ def recommendations():
 
     data = request.get_json(silent=True) or {}
 
-    # Bare-bones expects genres (optional) and k (optional)
+    
     genres = data.get("genres") or None
-    k = int(data.get("k", 1))  # allow client to pass k, default 1
+    k = int(data.get("k", 1)) 
 
     try:
         global ARTIFACTS
