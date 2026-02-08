@@ -53,19 +53,8 @@
 
 <body>
   <h1>Pick your choices</h1>
-  <p class="muted">Checkbox-only preferences. Backend can map these to features.</p>
+  <p class="muted">Checkbox preferences. the application will give you a song recommendation based off of your choice.</p>
 
-  <div class="card">
-    <h2>Audio traits</h2>
-    <div class="chips" id="audioTraits">
-      <label class="chip"><input type="checkbox" value="high_energy">High energy</label>
-      <label class="chip"><input type="checkbox" value="danceable">Danceable</label>
-      <label class="chip"><input type="checkbox" value="happy">Happy / upbeat</label>
-      <label class="chip"><input type="checkbox" value="acoustic">Acoustic</label>
-      <label class="chip"><input type="checkbox" value="instrumental">Instrumental</label>
-      <label class="chip"><input type="checkbox" value="lyrical">Lyrical / vocal</label>
-    </div>
-  </div>
 
   <div class="card">
     <h2>Genres</h2>
@@ -99,7 +88,7 @@
     }
 
     function buildPayload() {
-      const traits = getCheckedValues("audioTraits");
+    //   const traits = getCheckedValues("audioTraits");
       const preferences = {
         energy: 0.5,
         danceability: 0.5,
@@ -110,12 +99,7 @@
         liveness: 0.5
       };
 
-      if (traits.includes("high_energy")) preferences.energy = 0.85;
-      if (traits.includes("danceable")) preferences.danceability = 0.85;
-      if (traits.includes("happy")) preferences.valence = 0.8;
-      if (traits.includes("acoustic")) preferences.acousticness = 0.85;
-      if (traits.includes("instrumental")) preferences.instrumentalness = 0.8;
-      if (traits.includes("lyrical")) preferences.speechiness = 0.6;
+  
 
       return {
         preferences,

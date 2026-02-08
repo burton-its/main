@@ -61,13 +61,13 @@ def register():
     if request.method == "POST":
         email = request.form.get("email", "").strip().lower()
         password_raw = request.form.get("password", "")
-        # validation
+        # validation for email
         if not email or not password_raw:
             return render_template("register.html", msg="Please fill out the form!")
 
         if not re.match(r"[^@]+@[^@]+\.[^@]+", email):
             return render_template("register.html", msg="Invalid email address!")
-
+        # execute mysql
         cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
         cursor.execute("SELECT id FROM users WHERE email = %s", (email,))
         existing = cursor.fetchone()
@@ -78,9 +78,11 @@ def register():
         password_hash = bcrypt.hashpw(password_raw.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
         
         try:
+            # try for insert into mysql
             cursor.execute("INSERT INTO users (email, password_hash) VALUES (%s, %s)",
             (email, password_hash),)
             mysql.connection.commit()
+            # error
         except Exception as e:
             mysql.connection.rollback()
             cursor.close()
@@ -88,7 +90,7 @@ def register():
         finally:
             cursor.close()
 
-        msg = "You have successfully registered! Please log in."
+        msg = "you have successfully registered, log in now."
         return redirect(url_for("login"))
 
     return render_template("register.html", msg=msg)
@@ -96,7 +98,7 @@ def register():
 
 @app.route("/preferences")
 def preferences():
-    """Render music preferences page for logged-in users."""
+    # render music pref
     if not session.get("loggedin"):
         return redirect(url_for("login"))
     return render_template("preferences.html")
@@ -104,9 +106,9 @@ def preferences():
 
 @app.route("/recommendations", methods=["POST"])
 def recommendations():
-    """Return music recommendations for the provided preference payload."""
+    # return music preferences
     if not session.get("loggedin"):
-        return jsonify({"error": "Authentication required"}), 401
+        return jsonify({"error": "auth required"}), 401
 
     data = request.get_json(silent=True) or {}
     prefs = data.get("preferences") or {}
