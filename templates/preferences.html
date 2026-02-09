@@ -69,7 +69,10 @@
       <label class="chip"><input type="checkbox" value="classical">classical</label>
     </div>
   </div>
-
+<p class="muted">
+  Clicking Get Recommendations helps us personalize your music suggestions
+  based on what you choose
+</p>
   <div class="card">
     <button onclick="submitPrefs()">Get Recommendations</button>
 
@@ -113,28 +116,49 @@
         JSON.stringify(buildPayload(), null, 2);
     }
 
-    async function submitPrefs() {
-      const payload = buildPayload();
-      previewPayload();
 
-      const responseBox = document.getElementById("responseBox");
-      responseBox.textContent = "Loading...";
+  function getCheckedValues(containerId) {
+    return Array.from(
+      document.querySelectorAll(`#${containerId} input[type="checkbox"]:checked`)
+    ).map(cb => cb.value);
+  }
 
-      try {
-        const res = await fetch("/recommendations", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload)
-        });
+  function buildPayload() {
+    return {
+      genres: getCheckedValues("genres"),
+      k: 1
+    };
+  }
 
-        responseBox.textContent = await res.text();
-      } catch (err) {
-        responseBox.textContent = "Request failed: " + err;
-      }
-    }
+  function previewPayload() {
+    document.getElementById("payloadPreview").textContent =
+      JSON.stringify(buildPayload(), null, 2);
+  }
 
-    document.addEventListener("change", previewPayload);
+  async function submitPrefs() {
+    alert("This gets your recommendations.");
+
+    const payload = buildPayload();
     previewPayload();
-  </script>
+
+    const responseBox = document.getElementById("responseBox");
+    responseBox.textContent = "Loading...";
+
+    try {
+      const res = await fetch("/recommendations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+
+      responseBox.textContent = await res.text();
+    } catch (err) {
+      responseBox.textContent = "Request failed: " + err;
+    }
+  }
+
+  document.addEventListener("change", previewPayload);
+  previewPayload();
+</script>
 </body>
 </html>
