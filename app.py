@@ -18,7 +18,8 @@ ARTIFACTS = None
 @app.route("/")
 @app.route("/login", methods=["GET", "POST"])
 def login():
-    """Render login form and authenticate users on POST."""
+    """Render login form and authenticate users on POST.
+    """
     msg = ""
     if request.method == "POST" and "email" in request.form and "password" in request.form:
         email = request.form["email"].strip().lower()
@@ -45,7 +46,8 @@ def login():
 # logout
 @app.route("/logout")
 def logout():
-    """Clear session and redirect to login."""
+    """Clear session and redirect to login.
+    """
     session.clear()
     return redirect(url_for("login"))
 
@@ -133,7 +135,7 @@ def recommendations():
     if recs.empty:
         return jsonify({"error": "No recommendations found"}), 404
 
-    #return one
+    #return one rec
     row0 = recs.iloc[0]
     return jsonify({
         "artist": row0.get("artists"),

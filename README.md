@@ -6,16 +6,12 @@ This is a small Flask app that provides user authentication: login, logout, and 
 ## Requirements
 - Python 3.10+
 - MySQL
-- Virtual environment (recommended)
 
-## Setup
-1. Create and activate a virtual environment.
-2. Install dependencies.
-3. Configure environment variables.
-4. Initialize your database schema.
+
 
 ## Environment Variables
-The current `config.py` reads these environment variable names:
+The current `config.py` reads these environment variable names: (use config_example.py, congfig.py is in 
+.gitignore)
 
 ```
 MYSQL_HOST=localhost
@@ -24,22 +20,21 @@ MYSQL_SECRET_KEY=your_secret_key
 APP_USER=app_user
 ```
 
-Note: `MYSQL_PASSWORD` is not read from a named environment variable in the current code. If you intend to supply a password, update `config.py` to use a standard key like `MYSQL_PASSWORD`.
+
 
 ## Database Schema
-The app expects a `users` table with at least these columns:
+The app expects a `users` table with three columns
 - `id` (primary key)
 - `email` (unique)
 - `password_hash`
 
 ## Running the App
-From the project root:
+
 
 ```
 python app.py
 ```
 
-The development server runs with `debug=True`.
 
 ## Routes
 - `GET /` or `GET /login`: Show login form
